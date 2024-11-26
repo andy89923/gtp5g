@@ -88,6 +88,8 @@ void urr_quota_exhaust_action(struct urr *urr, struct gtp5g_dev *gtp)
     u16 *actions = NULL, *pdrids = NULL;
     struct far *far;
 
+    printk("urrid %d, quota_exhausted %d", urr->id, urr->quota_exhausted);
+
     if (urr->quota_exhausted) {
         GTP5G_WAR(NULL, "URR (%u) quota was already exhausted\n", urr->id);
         return;
@@ -97,16 +99,38 @@ void urr_quota_exhaust_action(struct urr *urr, struct gtp5g_dev *gtp)
     urr->pdr_num = 0;
 
     pdrids = kzalloc(MAX_PDR_PER_SESSION * sizeof(u16), GFP_KERNEL);
-    actions = kzalloc(MAX_PDR_PER_SESSION * sizeof(u16), GFP_KERNEL);
+    actions = kzalloc(MAX_PDR_PER_SESSION * sizeof(u16), GFP_KERNEL);    
     if (!pdrids || !actions)
         goto fail;
 
+    printk("urrid %d", urr->id);
+
     seid_urr_id_to_hex_str(urr->seid, urr->id, seid_urr_id_hexstr);
     head = &gtp->related_urr_hash[str_hashfn(seid_urr_id_hexstr) % gtp->hash_size];
+
+    if (!head) {
+       printk("head is nullprt");
+    } else {
+        printk("head is not nullptr");
+    }
+
     //each pdr that associate with the urr drop pkt
     hlist_for_each_entry_rcu(pdr_node, head, hlist) {
+        if (!pdr_node) {
+            printk("pdr_node is nullprt");
+        } else {
+            printk("pdr_node is not nullptr");
+        }
         if (find_urr_id_in_pdr(pdr_node->pdr, urr->id)) {
+            printk("find_urr_id_in_pdr found %d %d", urr->pdr_num, pdr_node->pdr->id);
             pdrids[urr->pdr_num] = pdr_node->pdr->id;
+
+            if (pdr_node->pdr->far) {
+                printk("pdr_node->pdr->far %d", pdr_node->pdr->far->id);
+            } else {
+                printk("pdr_node->pdr->far nullptr");
+            }
+            
             far = rcu_dereference(pdr_node->pdr->far);
             if (far != NULL) {
                 actions[urr->pdr_num++] = far->action;
@@ -115,6 +139,9 @@ void urr_quota_exhaust_action(struct urr *urr, struct gtp5g_dev *gtp)
             }
         }
     }
+    // printk("actions size %ld", ksize(actions) / sizeof(u16));
+    // printk("debug return %d",  urr->id);
+    // return;
 
     if (urr->pdr_num > 0) {
         urr->pdrids = kzalloc(urr->pdr_num * sizeof(u16), GFP_KERNEL);
@@ -265,26 +292,33 @@ int urr_set_pdr(struct pdr *pdr, struct gtp5g_dev *gtp)
 */  
 struct VolumeMeasurement *get_usage_report_counter(struct urr *urr, bool previous_counter)
 {
-    u32 now = ktime_get_real() / NSEC_PER_SEC;
+    // u32 now = ktime_get_real() / NSEC_PER_SEC;
+    
+    // printk("ctfang period %u", urr->period);
+    // printk("ctfang period hotns %u", htons(urr->period));
 
-    // If the period is zero, always return the first counter.
-    if (urr->period == 0) {
-       return &urr->bytes; 
-    }
+    // // If the period is zero, always return the first counter.
+    // if (urr->period == 0) {
+    //     printk("period == 0");
+    //     return &urr->bytes; 
+    // }
 
-    if ((now/urr->period)%2 == 1) {
-        if (previous_counter) {
-            return &urr->bytes;
-        } else{
-            return &urr->bytes2;
-        } 
-    } else {
-        if (previous_counter) {
-            return &urr->bytes2;
-        } else{
-            return &urr->bytes;
-        } 
-    }
+    // printk("now / urr->period %u", now / urr->period);
 
+    // if ((now/urr->period)%2 == 1) {
+    //     printk("== 1");
+    //     if (previous_counter) {
+    //         return &urr->bytes;
+    //     } else{
+    //         return &urr->bytes2;
+    //     } 
+    // } else {
+    //     printk("== 0");
+    //     if (previous_counter) {
+    //         return &urr->bytes2;
+    //     } else{
+    //         return &urr->bytes;
+    //     } 
+    // }
     return &urr->bytes;
 }

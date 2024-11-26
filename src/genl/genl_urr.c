@@ -339,8 +339,11 @@ static int urr_fill(struct urr *urr, struct gtp5g_dev *gtp, struct genl_info *in
         }
     }
 
-    if (info->attrs[GTP5G_URR_MEASUREMENT_PERIOD])
+    if (info->attrs[GTP5G_URR_MEASUREMENT_PERIOD]) {
+        printk("before nla_get_u32 %u", urr->period);
         urr->period = nla_get_u32(info->attrs[GTP5G_URR_MEASUREMENT_PERIOD]);
+        printk("after nla_get_u32 %u", urr->period);
+    }
 
     if (info->attrs[GTP5G_URR_MEASUREMENT_INFO])
         urr->info = nla_get_u8(info->attrs[GTP5G_URR_MEASUREMENT_INFO]);
@@ -353,6 +356,7 @@ static int urr_fill(struct urr *urr, struct gtp5g_dev *gtp, struct genl_info *in
         memset(&urr->consumed, 0, sizeof(struct VolumeMeasurement));
 
         if (urr->volumequota.totalVolume == 0 && urr->trigger == URR_RPT_TRIGGER_VOLQU) {
+            printk("1 call urr_quota_exhaust_action %d", urr->id);
             urr_quota_exhaust_action(urr, gtp);
             GTP5G_INF(NULL, "URR (%u) Receive zero quota, stop measure", urr->id);
         } else if (urr->quota_exhausted) {
