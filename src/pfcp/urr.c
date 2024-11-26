@@ -135,7 +135,7 @@ void urr_quota_exhaust_action(struct urr *urr, struct gtp5g_dev *gtp)
             if (far != NULL) {
                 actions[urr->pdr_num++] = far->action;
 
-                far->action = FAR_ACTION_DROP;
+                far->action = FAR_ACTION_FORW;
             }
         }
     }
@@ -292,33 +292,33 @@ int urr_set_pdr(struct pdr *pdr, struct gtp5g_dev *gtp)
 */  
 struct VolumeMeasurement *get_usage_report_counter(struct urr *urr, bool previous_counter)
 {
-    // u32 now = ktime_get_real() / NSEC_PER_SEC;
+    u32 now = ktime_get_real() / NSEC_PER_SEC;
     
-    // printk("ctfang period %u", urr->period);
-    // printk("ctfang period hotns %u", htons(urr->period));
+    printk("ctfang period %u", urr->period);
+    printk("ctfang period hotns %u", htons(urr->period));
 
-    // // If the period is zero, always return the first counter.
-    // if (urr->period == 0) {
-    //     printk("period == 0");
-    //     return &urr->bytes; 
-    // }
+    // If the period is zero, always return the first counter.
+    if (urr->period == 0) {
+        printk("period == 0");
+        return &urr->bytes; 
+    }
 
-    // printk("now / urr->period %u", now / urr->period);
+    printk("now / urr->period %u", now / urr->period);
 
-    // if ((now/urr->period)%2 == 1) {
-    //     printk("== 1");
-    //     if (previous_counter) {
-    //         return &urr->bytes;
-    //     } else{
-    //         return &urr->bytes2;
-    //     } 
-    // } else {
-    //     printk("== 0");
-    //     if (previous_counter) {
-    //         return &urr->bytes2;
-    //     } else{
-    //         return &urr->bytes;
-    //     } 
-    // }
+    if ((now/urr->period)%2 == 1) {
+        printk("== 1");
+        if (previous_counter) {
+            return &urr->bytes;
+        } else{
+            return &urr->bytes2;
+        } 
+    } else {
+        printk("== 0");
+        if (previous_counter) {
+            return &urr->bytes2;
+        } else{
+            return &urr->bytes;
+        } 
+    }
     return &urr->bytes;
 }
